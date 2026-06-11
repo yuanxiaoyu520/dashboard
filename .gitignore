@@ -1,0 +1,57 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# 爬虫运行结果数据
+scripts/**/result_*.json
+scripts/**/result_*/
+scripts/.crawler_user_data/
+scripts/baidu_cache/
+
+# 爬虫选择器数据（不上传本地脚本数据）
+scripts/*_selection.json
+scripts/*_link_selection.json
+
+# 爬虫运行产生的数据目录
+scripts/上海黄金交易/
+scripts/二手/
+scripts/伦敦金/
+scripts/政策/
+scripts/政策搜索结果页_中国政府网/
+scripts/新闻/
+scripts/统计/
+scripts/陈店政策/
+scripts/测试/
+
+# 爬虫日志
+scripts/*.log
+
+# 仪表盘运行时状态（不上传本地状态数据）
+data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local

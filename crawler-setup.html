@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新建浏览器爬虫</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
+    .card { max-width: 640px; margin: 24px auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+    label { display: block; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
+    input, select { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; margin-top: 6px; font-size: 14px; }
+    select { background: #fff; cursor: pointer; }
+    .hint { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: normal; }
+    .row { display: flex; gap: 12px; }
+    .row label { flex: 1; }
+    button { padding: 12px 24px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; font-size: 15px; font-weight: 600; width: 100%; margin-top: 8px; transition: background .2s; }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #6b7280; }
+    button.secondary:hover { background: #4b5563; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    button.small-btn { padding: 6px 12px; font-size: 13px; width: auto; margin-top: 0; }
+    .status { margin-top: 12px; min-height: 24px; color: #475569; font-size: 14px; }
+    .status.error { color: #dc2626; }
+    .status.success { color: #15803d; }
+    .section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
+    .checkbox-label input[type="checkbox"] { width: auto; margin: 0; }
+    .selection-list { margin: 12px 0; max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; }
+    .selection-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .selection-item:last-child { border-bottom: none; }
+    .selection-item .sel-info { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .selection-item .sel-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .selection-item .sel-actions button { padding: 2px 8px; font-size: 12px; width: auto; margin: 0; }
+    .selection-item .sel-tag { display: inline-block; background: #2563eb; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 11px; margin-right: 6px; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row button { flex: 1; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .modal-box h3 { margin-top: 0; }
+    .modal-box .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-box .modal-actions button { flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="margin-top:0;">🕷️ 新建浏览器爬虫</h2>
+    <form id="setupForm">
+      <div class="section-title">基本设置</div>
+      <label>
+        脚本名
+        <input id="scriptName" name="scriptName" placeholder="例如：demo_crawler" required />
+        <div class="hint">将自动添加 .py 后缀</div>
+      </label>
+      <label>
+        目标网址
+        <input id="targetUrl" name="targetUrl" placeholder="https://example.com" required />
+        <div class="hint">输入完整的网页地址</div>
+      </label>
+
+      <div class="section-title">浏览器设置</div>
+      <div class="row">
+        <label>
+          浏览器
+          <select id="browser">
+            <option value="msedge" selected>Microsoft Edge</option>
+            <option value="chrome">Google Chrome</option>
+          </select>
+        </label>
+        <label>
+          超时(秒)
+          <input id="timeout" type="number" value="60" min="10" max="300" />
+        </label>
+      </div>
+      <label class="checkbox-label">
+        <input id="headless" type="checkbox" />
+        无头模式（不显示浏览器界面）
+      </label>
+
+      <div class="section-title">点击设置</div>
+      <div class="row">
+        <label>
+          点击方式
+          <select id="clickMode">
+            <option value="click" selected>单击</option>
+            <option value="dblclick">双击</option>
+            <option value="hover">悬停</option>
+          </select>
+        </label>
+        <label>
+          等待时间(秒)
+          <input id="waitAfterClick" type="number" value="2" min="0" max="60" step="0.5" />
+          <div class="hint">点击后的等待时间</div>
+        </label>
+      </div>
+
+      <div class="section-title">高级选项</div>
+      <label>
+        自定义 User-Agent（可选）
+        <input id="userAgent" placeholder="留空使用默认" />
+      </label>
+      <label>
+        额外参数（可选）
+        <input id="extraArgs" placeholder="例如：--disable-gpu --mute-audio" />
+        <div class="hint">传递给浏览器的命令行参数，用空格分隔</div>
+      </label>
+
+      <div class="section-title">区域选择（可多选）</div>
+      <div id="selectionList" class="selection-list">
+        <div style="color:#94a3b8;font-size:13px;text-align:center;padding:16px;">尚未选择任何区域，点击下方按钮开始录制</div>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="startRecordBtn">🎯 开始录制区域</button>
+        <button type="button" id="clearSelectionsBtn" class="secondary small-btn" style="padding:12px 12px;width:auto;">清空</button>
+      </div>
+
+      <div class="section-title">链接跟随设置</div>
+      <label class="checkbox-label">
+        <input id="followLink" type="checkbox" />
+        跟随链接：点击后进入链接页面获取内容
+        <div class="hint">如果选择的区域包含链接，将自动进入链接页面抓取内容</div>
+      </label>
+      <div id="linkSelectionGroup" style="display:none;margin-top:8px;padding:12px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd;">
+        <label style="font-size:13px;font-weight:600;margin-bottom:8px;display:block;">🔗 链接页面区域选择</label>
+        <div id="linkSelectionList" class="selection-list" style="max-height:120px;">
+          <div style="color:#94a3b8;font-size:13px;text-align:center;padding:12px;">尚未选择链接页面的区域，默认提取整个网页</div>
+        </div>
+        <div class="btn-row" style="gap:6px;">
+          <button type="button" id="startLinkRecordBtn" class="small-btn" style="padding:6px 12px;font-size:12px;flex:1;background:#0891b2;">🎯 录制链接页面区域</button>
+          <button type="button" id="clearLinkSelectionsBtn" class="small-btn secondary" style="padding:6px 12px;font-size:12px;width:auto;">清空</button>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px;">💡 先录制主页面区域，再点击此按钮进入链接页面选择区域。若不选择，默认提取整个链接页面内容。</div>
+      </div>
+
+      <div class="section-title">生成选项</div>
+      <label class="checkbox-label">
+        <input id="autoGenerate" type="checkbox" checked />
+        录制完成后自动生成爬虫脚本
+      </label>
+
+      <button type="button" id="generateBtn" class="primary" style="background:#059669;">⚡ 生成爬虫脚本</button>
+    </form>
+    <div id="status" class="status">请填写脚本名和网址，然后录制区域。</div>
+  </div>
+
+  <!-- 确认生成弹窗 -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>⚙️ 确认生成爬虫脚本</h3>
+      <div id="confirmContent" style="font-size:14px;color:#475569;line-height:1.6;"></div>
+      <div class="modal-actions">
+        <button id="confirmCancelBtn" class="secondary">取消</button>
+        <button id="confirmOkBtn">确认生成</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('scriptName').value = params.get('scriptName') || '';
+    document.getElementById('targetUrl').value = params.get('targetUrl') || 'https://example.com';
+    // 从 URL 参数恢复浏览器设置
+    if (params.get('headless') === 'true') document.getElementById('headless').checked = true;
+    if (params.get('followLink') === 'true') {
+      document.getElementById('followLink').checked = true;
+      document.getElementById('linkSelectionGroup').style.display = 'block';
+    }
+    if (params.get('browser')) document.getElementById('browser').value = params.get('browser');
+    if (params.get('clickMode')) document.getElementById('clickMode').value = params.get('clickMode');
+    if (params.get('waitAfterClick')) document.getElementById('waitAfterClick').value = params.get('waitAfterClick');
+
+    const status = document.getElementById('status');
+    const selectionList = document.getElementById('selectionList');
+    const selections = []; // 存储主页面多个选择区域
+    const linkSelections = []; // 存储链接页面的区域选择
+    let linkRecordPage = null; // 链接录制时打开的页面引用
+
+    function renderSelectionList() {
+      if (selections.length === 0) {
+        selectionList.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:16px;">尚未选择任何区域，点击上方按钮开始录制</div>';
+        return;
+      }
+      selectionList.innerHTML = selections.map((sel, index) => {
+        const textPreview = (sel.text || '').slice(0, 40);
+        const tag = sel.tagName || '?';
+        return `<div class="selection-item">
+          <div class="sel-info">
+            <span class="sel-tag">#${index + 1}</span>
+            <strong>&lt;${tag}&gt;</strong> ${textPreview ? `"${textPreview}"` : ''}
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
+              ${sel.cssSelector ? sel.cssSelector.slice(0, 50) : ''}${sel.cssSelector && sel.cssSelector.length > 50 ? '...' : ''}
+            </div>
+          </div>
+          <div class="sel-actions">
+            <button class="small-btn secondary" onclick="previewSelection(${index})" title="预览">👁️</button>
+            <button class="small-btn danger" onclick="removeSelection(${index})" title="删除">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    window.previewSelection = function(index) {
+      const sel = selections[index];
+      if (!sel) return;
+      status.className = 'status';
+      status.innerHTML = `👁️ 区域 #${index + 1}: &lt;${sel.tagName}&gt; ${(sel.text || '').slice(0, 60)}<br>
+        📍 坐标 (${sel.x}, ${sel.y}) 大小 ${sel.width}×${sel.height}<br>
+        🔍 CSS: ${sel.cssSelector || '无'}`;
+    };
+
+    window.removeSelection = function(index) {
+      selections.splice(index, 1);
+      renderSelectionList();
+      status.className = 'status';
+      status.textContent = `已删除区域 #${index + 1}，剩余 ${selections.length} 个区域`;
+    };
+
+    // 跟随链接复选框切换显示链接区域选择组
+    document.getElementById('followLink').addEventListener('change', function() {
+      document.getElementById('linkSelectionGroup').style.display = this.checked ? 'block' : 'none';
+    });
+
+    function renderLinkSelectionList() {
+      const list = document.getElementById('linkSelectionList');
+      if (linkSelections.length === 0) {
+        list.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:12px;">尚未选择链接页面的区域，默认提取整个网页</div>';
+        return;
+      }
+      list.innerHTML = linkSelections.map((sel, index) => {
+        const textPreview = (sel.text || '').slice(0, 30);
+        const tag = sel.tagName || '?';
+        return `<div class="selection-item">
+          <div class="sel-info">
+            <span class="sel-tag" style="background:#0891b2;">#${index + 1}</span>
+            <strong>&lt;${tag}&gt;</strong> ${textPreview ? `"${textPreview}"` : ''}
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
+              ${sel.cssSelector ? sel.cssSelector.slice(0, 40) : ''}${sel.cssSelector && sel.cssSelector.length > 40 ? '...' : ''}
+            </div>
+          </div>
+          <div class="sel-actions">
+            <button class="small-btn danger" onclick="removeLinkSelection(${index})" title="删除">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    window.removeLinkSelection = function(index) {
+      linkSelections.splice(index, 1);
+      renderLinkSelectionList();
+      status.className = 'status';
+      status.textContent = `已删除链接页面区域 #${index + 1}，剩余 ${linkSelections.length} 个`;
+    };
+
+    let pollTimer = null;
+    let linkPollTimer = null;
+
+    // 开始录制区域
+    document.getElementById('startRecordBtn').addEventListener('click', async () => {
+      const scriptName = document.getElementById('scriptName').value.trim();
+      const targetUrl = document.getElementById('targetUrl').value.trim();
+      const browser = document.getElementById('browser').value;
+      const timeout = parseInt(document.getElementById('timeout').value) || 60;
+      const headless = document.getElementById('headless').checked;
+      const clickMode = document.getElementById('clickMode').value;
+      const waitAfterClick = parseFloat(document.getElementById('waitAfterClick').value) || 2;
+      const userAgent = document.getElementById('userAgent').value.trim();
+      const extraArgs = document.getElementById('extraArgs').value.trim();
+
+      if (!scriptName) { status.className = 'status error'; status.textContent = '请输入脚本名'; return; }
+      if (!targetUrl) { status.className = 'status error'; status.textContent = '请输入目标网址'; return; }
+
+      status.className = 'status';
+      status.textContent = '正在打开浏览器并录制区域，请稍候...';
+
+      const response = await fetch('/api/crawler/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scriptName,
+          targetUrl,
+          browser,
+          timeout,
+          headless,
+          clickMode,
+          waitAfterClick,
+          userAgent,
+          extraArgs,
+          multiSelect: true  // 标记为多选模式
+        })
+      });
+      const data = await response.json();
+      if (!data.success) {
+        status.className = 'status error';
+        status.textContent = data.message || '创建失败';
+        return;
+      }
+
+      status.className = 'status success';
+      status.innerHTML = '✅ 浏览器已打开！<br><br>📌 <strong>操作说明：</strong><br>1. 移动鼠标查看 <strong>红色方框</strong> 实时预览<br>2. <strong>点击</strong>元素 = 选择该元素（替换之前的选择）<br>3. <strong>Ctrl+点击</strong> = 添加/取消选择（多选）<br>4. 已选择的元素会显示 <strong>绿色锁定框+序号</strong><br>5. 在终端中输入 <strong>done</strong> 并回车结束录制<br><br>⏳ 正在轮询选择结果...';
+
+      // 轮询检测 selection JSON
+      const scriptNameVal = data.name;
+      const selectionConfigPath = `${scriptNameVal.replace(/\.py$/i, '')}_selection.json`;
+      let lastSelectionCount = 0;
+
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const checkResp = await fetch(`/api/selection-json?name=${encodeURIComponent(selectionConfigPath)}`);
+          if (checkResp.ok) {
+            const checkData = await checkResp.json();
+            if (checkData && checkData.content) {
+              try {
+                const selData = JSON.parse(checkData.content);
+                // 支持 selections 数组或单个 selection
+                const newSelections = selData.selections || (selData.selection ? [selData.selection] : []);
+
+                if (newSelections.length > 0 && newSelections[0].cssSelector) {
+                  // 完全替换本地 selections（Python 端是权威数据源）
+                  const validSelections = newSelections.filter(s => s && s.cssSelector);
+
+                  if (validSelections.length !== selections.length ||
+                      JSON.stringify(validSelections.map(s => s.cssSelector)) !== JSON.stringify(selections.map(s => s.cssSelector))) {
+                    // 有变化才更新
+                    selections.length = 0;
+                    validSelections.forEach(s => selections.push(s));
+                    renderSelectionList();
+
+                    if (validSelections.length > lastSelectionCount) {
+                      status.className = 'status success';
+                      status.innerHTML = `✅ 已选择 ${validSelections.length} 个区域。<br>继续 Ctrl+点击添加更多，或在终端输入 <strong>done</strong> 结束录制。`;
+                    }
+                    lastSelectionCount = validSelections.length;
+                  }
+
+                  // 检查录制是否已完成
+                  if (selData.recording === false) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    status.className = 'status success';
+                    status.innerHTML = `✅ 录制完成！共选择 ${validSelections.length} 个区域。<br>点击下方 <strong>"生成爬虫脚本"</strong> 完成创建。`;
+                  }
+                }
+              } catch (e) {
+                // JSON 解析错误，忽略
+              }
+            }
+          }
+        } catch (e) {
+          // 忽略轮询错误
+        }
+      }, 1500);
+
+      // 10分钟后停止轮询
+      setTimeout(() => {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      }, 600000);
+    });
+
+    // 清空所有选择
+    document.getElementById('clearSelectionsBtn').addEventListener('click', () => {
+      if (selections.length === 0) return;
+      if (confirm('确定清空所有已选择的区域吗？')) {
+        selections.length = 0;
+        renderSelectionList();
+        status.className = 'status';
+        status.textContent = '已清空所有区域选择';
+      }
+    });
+
+    // 清空链接页面区域选择
+    document.getElementById('clearLinkSelectionsBtn').addEventListener('click', () => {
+      if (linkSelections.length === 0) return;
+      linkSelections.length = 0;
+      renderLinkSelectionList();
+      status.className = 'status';
+      status.textContent = '已清空所有链接页面区域选择';
+    });
+
+    // 开始录制链接页面区域
+    document.getElementById('startLinkRecordBtn').addEventListener('click', async () => {
+      const scriptName = document.getElementById('scriptName').value.trim();
+      const targetUrl = document.getElementById('targetUrl').value.trim();
+      const browser = document.getElementById('browser').value;
+      const timeout = parseInt(document.getElementById('timeout').value) || 60;
+      const headless = document.getElementById('headless').checked;
+      const clickMode = document.getElementById('clickMode').value;
+      const waitAfterClick = parseFloat(document.getElementById('waitAfterClick').value) || 2;
+      const userAgent = document.getElementById('userAgent').value.trim();
+      const extraArgs = document.getElementById('extraArgs').value.trim();
+
+      if (!scriptName) { status.className = 'status error'; status.textContent = '请输入脚本名'; return; }
+      if (!targetUrl) { status.className = 'status error'; status.textContent = '请输入目标网址'; return; }
+      if (selections.length === 0) { status.className = 'status error'; status.textContent = '请先录制主页面区域'; return; }
+
+      status.className = 'status';
+      status.textContent = '正在打开链接页面录制区域，请稍候...';
+
+      const response = await fetch('/api/crawler/create-link-selection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scriptName,
+          targetUrl,
+          browser,
+          timeout,
+          headless,
+          clickMode,
+          waitAfterClick,
+          userAgent,
+          extraArgs,
+          selections: selections,
+          multiSelect: true
+        })
+      });
+      const data = await response.json();
+      if (!data.success) {
+        status.className = 'status error';
+        status.textContent = data.message || '创建链接录制失败';
+        return;
+      }
+
+      status.className = 'status success';
+      status.innerHTML = '✅ 链接页面浏览器已打开！<br><br>📌 <strong>操作说明：</strong><br>1. 浏览器已打开第一个链接的页面<br>2. <strong>Ctrl+点击</strong>选择要提取的区域（多选）<br>3. 在终端中输入 <strong>done</strong> 并回车结束录制<br><br>⏳ 正在轮询选择结果...';
+
+      // 轮询检测链接页面的 selection JSON
+      const linkConfigPath = `${scriptName.replace(/\.py$/i, '')}_link_selection.json`;
+      let lastLinkCount = 0;
+
+      if (linkPollTimer) clearInterval(linkPollTimer);
+      linkPollTimer = setInterval(async () => {
+        try {
+          const checkResp = await fetch(`/api/selection-json?name=${encodeURIComponent(linkConfigPath)}`);
+          if (checkResp.ok) {
+            const checkData = await checkResp.json();
+            if (checkData && checkData.content) {
+              try {
+                const selData = JSON.parse(checkData.content);
+                const newSelections = selData.selections || (selData.selection ? [selData.selection] : []);
+
+                if (newSelections.length > 0 && newSelections[0].cssSelector) {
+                  const validSelections = newSelections.filter(s => s && s.cssSelector);
+
+                  if (validSelections.length !== linkSelections.length ||
+                      JSON.stringify(validSelections.map(s => s.cssSelector)) !== JSON.stringify(linkSelections.map(s => s.cssSelector))) {
+                    linkSelections.length = 0;
+                    validSelections.forEach(s => linkSelections.push(s));
+                    renderLinkSelectionList();
+
+                    if (validSelections.length > lastLinkCount) {
+                      status.className = 'status success';
+                      status.innerHTML = `✅ 链接页面已选择 ${validSelections.length} 个区域。<br>继续 Ctrl+点击添加更多，或在终端输入 <strong>done</strong> 结束录制。`;
+                    }
+                    lastLinkCount = validSelections.length;
+                  }
+
+                  if (selData.recording === false) {
+                    clearInterval(linkPollTimer);
+                    linkPollTimer = null;
+                    status.className = 'status success';
+                    status.innerHTML = `✅ 链接页面录制完成！共选择 ${validSelections.length} 个区域。<br>点击下方 <strong>"生成爬虫脚本"</strong> 完成创建。`;
+                  }
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }, 1500);
+
+      setTimeout(() => {
+        if (linkPollTimer) {
+          clearInterval(linkPollTimer);
+          linkPollTimer = null;
+        }
+      }, 600000);
+    });
+
+    // 生成爬虫脚本（带确认弹窗）
+    document.getElementById('generateBtn').addEventListener('click', showConfirmDialog);
+
+    document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+      document.getElementById('confirmModal').classList.remove('active');
+    });
+
+    document.getElementById('confirmOkBtn').addEventListener('click', generateScript);
+
+    function showConfirmDialog() {
+      const scriptName = document.getElementById('scriptName').value.trim();
+      const targetUrl = document.getElementById('targetUrl').value.trim();
+      const followLink = document.getElementById('followLink').checked;
+      const autoGen = document.getElementById('autoGenerate').checked;
+
+      if (!scriptName) { status.className = 'status error'; status.textContent = '请输入脚本名'; return; }
+      if (!targetUrl) { status.className = 'status error'; status.textContent = '请输入目标网址'; return; }
+      if (selections.length === 0) { status.className = 'status error'; status.textContent = '请先录制至少一个区域'; return; }
+
+      let html = `<p><strong>脚本名：</strong>${scriptName}</p>`;
+      html += `<p><strong>目标网址：</strong>${targetUrl}</p>`;
+      html += `<p><strong>已选区域：</strong>${selections.length} 个</p>`;
+      html += `<ul style="margin:4px 0;padding-left:20px;">`;
+      selections.forEach((sel, i) => {
+        const textPreview = (sel.text || '').slice(0, 30);
+        html += `<li>区域 #${i + 1}: &lt;${sel.tagName}&gt; ${textPreview ? `"${textPreview}"` : '(无文本)'}</li>`;
+      });
+      html += `</ul>`;
+      html += `<p><strong>跟随链接：</strong>${followLink ? '是' : '否'}</p>`;
+      if (followLink) {
+        html += `<p><strong>链接页面区域：</strong>${linkSelections.length > 0 ? linkSelections.length + ' 个（自定义区域）' : '默认（整个网页）'}</p>`;
+      }
+      html += `<p><strong>自动生成脚本：</strong>${autoGen ? '是' : '否'}</p>`;
+
+      document.getElementById('confirmContent').innerHTML = html;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    async function generateScript() {
+      document.getElementById('confirmModal').classList.remove('active');
+
+      const scriptName = document.getElementById('scriptName').value.trim();
+      const targetUrl = document.getElementById('targetUrl').value.trim();
+      const browser = document.getElementById('browser').value;
+      const timeout = parseInt(document.getElementById('timeout').value) || 60;
+      const headless = document.getElementById('headless').checked;
+      const clickMode = document.getElementById('clickMode').value;
+      const waitAfterClick = parseFloat(document.getElementById('waitAfterClick').value) || 2;
+      const userAgent = document.getElementById('userAgent').value.trim();
+      const extraArgs = document.getElementById('extraArgs').value.trim();
+      const followLink = document.getElementById('followLink').checked;
+      const autoGen = document.getElementById('autoGenerate').checked;
+
+      status.className = 'status';
+      status.textContent = '正在生成爬虫脚本...';
+
+      const response = await fetch('/api/crawler/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scriptName,
+          targetUrl,
+          selections: selections,
+          linkSelections: linkSelections,
+          browser,
+          timeout,
+          headless,
+          clickMode,
+          waitAfterClick,
+          userAgent,
+          extraArgs,
+          followLink,
+          autoGenerate: autoGen
+        })
+      });
+      const data = await response.json();
+      if (!data.success) {
+        status.className = 'status error';
+        status.textContent = data.message || '生成失败';
+        return;
+      }
+
+      status.className = 'status success';
+      status.innerHTML = `✅ 爬虫脚本已生成！<br><br>脚本名：${data.name}<br>已选区域：${selections.length} 个<br><br>可以关闭此页面，返回仪表盘查看脚本。`;
+
+      if (window.opener) {
+        window.opener.postMessage({ type: 'crawler-created', scriptName: data.name }, window.location.origin);
+      }
+    }
+
+    // 原有的表单提交保留兼容
+    document.getElementById('setupForm').addEventListener('submit', event => {
+      event.preventDefault();
+      document.getElementById('generateBtn').click();
+    });
+  </script>
+</body>
+</html>

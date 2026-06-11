@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python 自动化脚本仪表盘</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="theme-day">
+  <div class="page-shell">
+    <header class="topbar">
+      <div>
+        <h1>Python 自动化脚本仪表盘</h1>
+        <p>统一查看、编辑、运行和定时调度本机 Python 脚本</p>
+      </div>
+      <div class="controls">
+        <button id="themeToggle" class="secondary">切换夜间模式</button>
+        <button id="refreshButton">刷新状态</button>
+        <button id="newScriptButton" class="secondary">新建脚本</button>
+        <button id="newCrawlerButton" class="primary">新建浏览器爬虫</button>
+      </div>
+    </header>
+
+    <section class="summary-cards" aria-label="概览指标">
+      <article class="card">
+        <span>脚本总数</span>
+        <strong id="summary-total">0</strong>
+      </article>
+      <article class="card">
+        <span>运行中</span>
+        <strong id="summary-running">0</strong>
+      </article>
+      <article class="card">
+        <span>定时任务</span>
+        <strong id="summary-scheduled">0</strong>
+      </article>
+      <article class="card">
+        <span>当前脚本状态</span>
+        <strong id="summary-status">未选择</strong>
+      </article>
+    </section>
+
+    <section class="dashboard-grid">
+      <aside class="panel script-list-panel">
+        <div class="panel-header">
+          <h2>脚本列表</h2>
+          <span class="panel-note">点击脚本进入编辑</span>
+        </div>
+        <div id="scriptList" class="script-list"></div>
+      </aside>
+
+      <section class="panel editor-panel">
+        <div class="panel-header">
+          <h2 id="editorTitle">脚本编辑器</h2>
+          <div class="button-row">
+            <button id="saveButton" class="primary">保存脚本</button>
+            <button id="startButton">立即运行</button>
+            <button id="stopButton" class="danger">停止</button>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            脚本名
+            <input id="scriptNameInput" placeholder="例如：daily_report.py" />
+          </label>
+          <label>
+            运行模式
+            <select id="runModeSelect">
+              <option value="continuous">一直运行</option>
+              <option value="interval">区间运行</option>
+              <option value="limited">有限次数</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-grid" id="scheduleFields">
+          <label>
+            间隔值
+            <input id="scheduleInput" type="number" min="1" placeholder="如：30" />
+          </label>
+          <label>
+            间隔单位
+            <select id="scheduleUnitSelect">
+              <option value="minute">分钟</option>
+              <option value="hour">小时</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-grid" id="timeRangeFields" style="display:none;">
+          <label>
+            开始时间
+            <input id="startTimeInput" type="time" />
+          </label>
+          <label>
+            结束时间
+            <input id="endTimeInput" type="time" />
+          </label>
+        </div>
+
+        <div class="field-grid" id="maxRunsField" style="display:none;">
+          <label>
+            运行次数
+            <input id="maxRunsInput" type="number" min="1" placeholder="如：5" />
+          </label>
+        </div>
+
+        <!-- 浏览器爬虫参数（仅爬虫脚本显示） -->
+        <div id="crawlerParams" class="crawler-params" style="display:none;">
+          <div class="panel-header" style="margin-top:12px;">
+            <h3>🕷️ 浏览器爬虫参数</h3>
+          </div>
+          <div class="field-grid">
+            <label>
+              浏览器
+              <select id="crawlerBrowser">
+                <option value="msedge">Microsoft Edge</option>
+                <option value="chrome">Google Chrome</option>
+              </select>
+            </label>
+          </div>
+          <div class="field-grid">
+            <label>
+              点击方式
+              <select id="crawlerClickMode">
+                <option value="click">单击</option>
+                <option value="dblclick">双击</option>
+                <option value="hover">悬停</option>
+              </select>
+            </label>
+            <label>
+              点击后等待(秒)
+              <input id="crawlerWaitAfterClick" type="number" value="2" min="0" max="60" step="0.5" />
+            </label>
+          </div>
+          <div class="field-grid">
+            <label class="checkbox-label-inline">
+              <input id="crawlerHeadless" type="checkbox" />
+              无头模式（不显示浏览器界面）
+            </label>
+          </div>
+          <div class="field-grid">
+            <label class="checkbox-label-inline">
+              <input id="crawlerFollowLink" type="checkbox" />
+              跟随链接：点击后进入链接页面获取完整内容
+            </label>
+          </div>
+        </div>
+
+        <label class="editor-area">
+          <span>脚本内容</span>
+          <textarea id="scriptContent" spellcheck="false"></textarea>
+        </label>
+
+        <div class="log-panel">
+          <div class="panel-header">
+            <h3>运行日志</h3>
+            <button id="openDataDirButton" class="small-btn" title="打开脚本专属数据文件夹">📂 打开数据目录</button>
+          </div>
+          <pre id="logOutput">暂无日志</pre>
+        </div>
+
+        <div class="result-panel">
+          <div class="panel-header">
+            <h3>最新生成结果</h3>
+            <span id="resultFileName" class="result-file-name"></span>
+            <button id="refreshResultButton" class="small-btn" title="刷新最新结果">🔄 刷新</button>
+          </div>
+          <div id="resultContent" class="result-content">
+            <span class="result-placeholder">选择脚本并运行后，最新生成的结果将显示在这里</span>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
